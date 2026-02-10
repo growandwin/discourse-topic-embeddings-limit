@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-module ::HowicuredTopicEmbeddingsLimit
+module ::TopicEmbeddingsLimit
   def self.max_chars
-    SiteSetting.howicured_topic_embeddings_limit_max_chars.to_i
+    SiteSetting.topic_embeddings_limit_max_chars.to_i
   end
 
   # Narastająco: title + posty od początku aż do limitu
@@ -32,15 +32,11 @@ module ::HowicuredTopicEmbeddingsLimit
     buf.strip!
     buf
   end
-end
 
-if defined?(::DiscourseAi::Embeddings::Vector)
-  module ::HowicuredTopicEmbeddingsLimit::VectorPatch
+  module VectorPatch
     def generate_representation_from(target)
-      # target może być Topic albo Post (wg joba)
-      if SiteSetting.howicured_topic_embeddings_limit_enabled && target.is_a?(::Topic)
-        # zamiast vdef.prepare_target_text(topic) bierzemy własną, limitowaną wersję
-        text = ::HowicuredTopicEmbeddingsLimit.limited_topic_text(target)
+      if SiteSetting.topic_embeddings_limit_enabled && target.is_a?(::Topic)
+        text = ::TopicEmbeddingsLimit.limited_topic_text(target)
         return if text.blank?
 
         schema = ::DiscourseAi::Embeddings::Schema.for(target.class, vector_def: @vdef)
@@ -56,6 +52,9 @@ if defined?(::DiscourseAi::Embeddings::Vector)
       super
     end
   end
+end
 
-  ::DiscourseAi::Embeddings::Vector.prepend(::HowicuredTopicEmbeddingsLimit::VectorPatch)
+# Patchuj tylko jeśli discourse-ai już załadował Vector
+if defined?(::DiscourseAi::Embeddings::Vector)
+  ::DiscourseAi::Embeddings::Vector.prepend(::TopicEmbeddingsLimit::VectorPatch)
 end

@@ -1,0 +1,10 @@
+plugins:
+  topic_embeddings_limit_enabled:
+    default: true
+    client: true
+
+  topic_embeddings_limit_max_chars:
+    default: 20000
+    min: 2000
+    max: 200000
+    client: false
